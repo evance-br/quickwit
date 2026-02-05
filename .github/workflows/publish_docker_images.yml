@@ -2,6 +2,12 @@ name: Build and publish Docker images
 
 on:
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Docker image tag"
+        required: true
+        default: "manual-build"
+        type: string
   push:
     branches:
       - main
@@ -22,12 +28,12 @@ jobs:
     strategy:
       matrix:
         include:
-          # - os: ubuntu-latest
-          #   platform: linux/amd64
-          #   platform_suffix: amd64
-          - os: ubuntu-24.04-arm
-            platform: linux/arm64
-            platform_suffix: arm64
+          - os: ubuntu-latest
+            platform: linux/amd64
+            platform_suffix: amd64
+          # - os: ubuntu-24.04-arm
+          #   platform: linux/arm64
+          #   platform_suffix: arm64
     runs-on: ${{ matrix.os }}
     permissions:
       contents: read
@@ -144,6 +150,7 @@ jobs:
             type=semver,pattern={{version}},suffix=-slim-bookworm
             type=ref,event=tag
             type=raw,value=v0.9.0-rc,enable=${{ github.ref == 'refs/heads/release-0.9' }}
+            type=raw,value=${{ inputs.tag }},enable=${{ github.event_name == 'workflow_dispatch' }}
       - name: Login to Docker Hub
         uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
