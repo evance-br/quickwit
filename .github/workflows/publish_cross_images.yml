@@ -1,29 +1,29 @@
-name: Publish custom cross images
+# name: Publish custom cross images
 
-on:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - "build/cross-images/**"
+# on:
+#   workflow_dispatch:
+#   push:
+#     branches:
+#       - main
+#     paths:
+#       - "build/cross-images/**"
 
-permissions:
-  contents: read
+# permissions:
+#   contents: read
 
-jobs:
-  build-cross-images:
-    name: Publish cross images
-    runs-on: ubuntu-latest
-    environment:
-        name: production
-    steps:
-      - name: Check out the repo
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
-      - name: Log in to Docker Hub
-        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
-      - name: Build and push cross images
-        run: make cross-images
+# jobs:
+#   build-cross-images:
+#     name: Publish cross images
+#     runs-on: ubuntu-latest
+#     environment:
+#         name: production
+#     steps:
+#       - name: Check out the repo
+#         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+#       - name: Log in to Docker Hub
+#         uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+#         with:
+#           username: ${{ secrets.DOCKERHUB_USERNAME }}
+#           password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
+#       - name: Build and push cross images
+#         run: make cross-images

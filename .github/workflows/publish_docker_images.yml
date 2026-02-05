@@ -5,12 +5,9 @@ on:
   push:
     branches:
       - main
-      - release-0.9
     paths:
       - "quickwit/**"
     tags:
-      - airmail
-      - happy-plazza
       - qw*
       - v*
 
@@ -18,7 +15,7 @@ permissions:
   contents: read
 
 env:
-  REGISTRY_IMAGE: quickwit/quickwit
+  REGISTRY_IMAGE: brevan2/quickwit
 
 jobs:
   docker:
