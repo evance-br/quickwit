@@ -33,7 +33,7 @@ use quickwit_indexing::actors::{
 use quickwit_indexing::merge_policy::merge_policy_from_settings;
 use quickwit_indexing::{IndexingSplitStore, PublisherType, SplitsUpdateMailbox};
 use quickwit_metastore::IndexMetadataResponseExt;
-use quickwit_proto::indexing::MergePipelineId;
+use quickwit_proto::indexing::{IndexingPipelineId, MergePipelineId};
 use quickwit_proto::metastore::{IndexMetadataRequest, MetastoreService, MetastoreServiceClient};
 use quickwit_proto::types::{IndexUid, NodeId};
 use quickwit_search::SearchJobPlacer;
@@ -166,6 +166,7 @@ impl DeleteTaskPipeline {
             self.metastore.clone(),
             None,
             None,
+            IndexingPipelineId::default(),
         );
         let (publisher_mailbox, publisher_supervisor_handler) =
             ctx.spawn_actor().supervise(publisher);
@@ -181,13 +182,14 @@ impl DeleteTaskPipeline {
             SplitsUpdateMailbox::Publisher(publisher_mailbox),
             self.max_concurrent_split_uploads,
             self.event_broker.clone(),
+            IndexingPipelineId::default(),
         );
         let (uploader_mailbox, uploader_supervisor_handler) = ctx.spawn_actor().supervise(uploader);
 
         let doc_mapper =
             build_doc_mapper(&index_config.doc_mapping, &index_config.search_settings)?;
         let tag_fields = doc_mapper.tag_named_fields()?;
-        let packager = Packager::new("MergePackager", tag_fields, uploader_mailbox);
+        let packager = Packager::new("MergePackager",   tag_fields, uploader_mailbox, IndexingPipelineId::default());
         let (packager_mailbox, packager_supervisor_handler) = ctx.spawn_actor().supervise(packager);
         let pipeline_id = MergePipelineId {
             node_id: NodeId::from("unknown"),

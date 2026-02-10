@@ -313,6 +313,7 @@ pub trait Source: Send + 'static {
 pub struct SourceActor {
     pub source: Box<dyn Source>,
     pub doc_processor_mailbox: Mailbox<DocProcessor>,
+    pub pipeline_id: IndexingPipelineId,
 }
 
 #[derive(Debug)]
@@ -359,6 +360,11 @@ impl Actor for SourceActor {
         exit_status: &ActorExitStatus,
         ctx: &SourceContext,
     ) -> anyhow::Result<()> {
+        tracing::debug!(
+            pipeline_id=%self.pipeline_id,
+            exit_status=?exit_status, 
+            "finalize source actor"
+        );
         self.source.finalize(exit_status, ctx).await?;
         Ok(())
     }

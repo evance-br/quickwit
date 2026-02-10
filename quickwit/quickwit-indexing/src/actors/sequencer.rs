@@ -17,6 +17,7 @@ use std::fmt::Debug;
 use anyhow::Context;
 use async_trait::async_trait;
 use quickwit_actors::{Actor, ActorContext, ActorExitStatus, Handler, Mailbox, QueueCapacity};
+use quickwit_proto::indexing::IndexingPipelineId;
 use tokio::sync::oneshot;
 
 /// The sequencer serves as a proxy to another actor,
@@ -32,11 +33,12 @@ use tokio::sync::oneshot;
 /// ensures that publish message are send in the right order.
 pub struct Sequencer<A: Actor> {
     mailbox: Mailbox<A>,
+    pipeline_id: IndexingPipelineId,
 }
 
 impl<A: Actor> Sequencer<A> {
-    pub fn new(mailbox: Mailbox<A>) -> Self {
-        Sequencer { mailbox }
+    pub fn new(mailbox: Mailbox<A>, pipeline_id: IndexingPipelineId) -> Self {
+        Sequencer { mailbox, pipeline_id }
     }
 }
 
@@ -49,6 +51,15 @@ impl<A: Actor> Actor for Sequencer<A> {
     }
 
     fn observable_state(&self) {}
+
+    async fn finalize(&mut self, exit_status: &quickwit_actors::ActorExitStatus, _ctx: &ActorContext<Self>) -> anyhow::Result<()> {
+        tracing::debug!(
+            pipeline_id=%self.pipeline_id,
+            exit_status=?exit_status, 
+            "finalize sequencer actor"
+        );
+        Ok(())
+    }
 }
 
 #[derive(Debug)]
@@ -124,7 +135,7 @@ mod tests {
         let universe = Universe::with_accelerated_time();
         let test_actor = SequencerTestActor::default();
         let (test_mailbox, test_handle) = universe.spawn_builder().spawn(test_actor);
-        let sequencer = Sequencer::new(test_mailbox);
+        let sequencer = Sequencer::new(test_mailbox, IndexingPipelineId::default());
         let (sequencer_mailbox, sequencer_handle) = universe.spawn_builder().spawn(sequencer);
         // The sequencer has a capacity of 2.
         // This is the maximum we can do without provoking a deadlock.

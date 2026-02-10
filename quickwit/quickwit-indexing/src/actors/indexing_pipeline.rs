@@ -307,6 +307,7 @@ impl IndexingPipeline {
             gen=self.generation()
         ))]
     async fn spawn_pipeline(&mut self, ctx: &ActorContext<Self>) -> anyhow::Result<()> {
+        
         let _spawn_pipeline_permit = ctx
             .protect_future(SPAWN_PIPELINE_SEMAPHORE.acquire())
             .await
@@ -335,7 +336,9 @@ impl IndexingPipeline {
             self.params.metastore.clone(),
             Some(self.params.merge_planner_mailbox.clone()),
             Some(source_mailbox.clone()),
+            self.params.pipeline_id.clone(),
         );
+
         let (publisher_mailbox, publisher_handle) = ctx
             .spawn_actor()
             .set_kill_switch(self.kill_switch.clone())
@@ -346,7 +349,7 @@ impl IndexingPipeline {
             )
             .spawn(publisher);
 
-        let sequencer = Sequencer::new(publisher_mailbox);
+        let sequencer = Sequencer::new(publisher_mailbox, self.params.pipeline_id.clone());
         let (sequencer_mailbox, sequencer_handle) = ctx
             .spawn_actor()
             .set_backpressure_micros_counter(
@@ -367,7 +370,9 @@ impl IndexingPipeline {
             SplitsUpdateMailbox::Sequencer(sequencer_mailbox),
             self.params.max_concurrent_split_uploads_index,
             self.params.event_broker.clone(),
+            self.params.pipeline_id.clone(),
         );
+
         let (uploader_mailbox, uploader_handle) = ctx
             .spawn_actor()
             .set_backpressure_micros_counter(
@@ -380,14 +385,14 @@ impl IndexingPipeline {
 
         // Packager
         let tag_fields = self.params.doc_mapper.tag_named_fields()?;
-        let packager = Packager::new("Packager", tag_fields, uploader_mailbox);
+        let packager = Packager::new("Packager", tag_fields, uploader_mailbox, self.params.pipeline_id.clone());
         let (packager_mailbox, packager_handle) = ctx
             .spawn_actor()
             .set_kill_switch(self.kill_switch.clone())
             .spawn(packager);
 
         // Index Serializer
-        let index_serializer = IndexSerializer::new(packager_mailbox);
+        let index_serializer = IndexSerializer::new(packager_mailbox, self.params.pipeline_id.clone());
         let (index_serializer_mailbox, index_serializer_handle) = ctx
             .spawn_actor()
             .set_kill_switch(self.kill_switch.clone())
@@ -420,6 +425,7 @@ impl IndexingPipeline {
             indexer_mailbox,
             self.params.source_config.transform_config.clone(),
             self.params.source_config.input_format,
+            self.params.pipeline_id.clone(),
         )?;
         let (doc_processor_mailbox, doc_processor_handle) = ctx
             .spawn_actor()
@@ -446,6 +452,7 @@ impl IndexingPipeline {
         let actor_source = SourceActor {
             source,
             doc_processor_mailbox,
+            pipeline_id: self.params.pipeline_id.clone(),
         };
         let (source_mailbox, source_handle) = ctx
             .spawn_actor()

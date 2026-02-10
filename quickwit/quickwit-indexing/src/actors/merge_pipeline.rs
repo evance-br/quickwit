@@ -30,10 +30,11 @@ use quickwit_metastore::{
     ListSplitsQuery, ListSplitsRequestExt, MetastoreServiceStreamSplitsExt, SplitMetadata,
     SplitState,
 };
-use quickwit_proto::indexing::MergePipelineId;
+use quickwit_proto::indexing::{IndexingPipelineId, MergePipelineId};
 use quickwit_proto::metastore::{
     ListSplitsRequest, MetastoreError, MetastoreResult, MetastoreService, MetastoreServiceClient,
 };
+use quickwit_proto::types::PipelineUid;
 use time::OffsetDateTime;
 use tokio::sync::Semaphore;
 use tracing::{debug, error, info, instrument};
@@ -266,6 +267,12 @@ impl MergePipeline {
             self.params.metastore.clone(),
             Some(self.merge_planner_mailbox.clone()),
             None,
+            IndexingPipelineId{
+                node_id: self.params.pipeline_id.node_id.clone(),
+                index_uid: self.params.pipeline_id.index_uid.clone(),
+                source_id: "foo".to_string(),
+                pipeline_uid: PipelineUid::default(),
+            },
         );
         let (merge_publisher_mailbox, merge_publisher_handle) = ctx
             .spawn_actor()
@@ -287,6 +294,12 @@ impl MergePipeline {
             merge_publisher_mailbox.into(),
             self.params.max_concurrent_split_uploads,
             self.params.event_broker.clone(),
+            IndexingPipelineId{
+                node_id: self.params.pipeline_id.node_id.clone(),
+                index_uid: self.params.pipeline_id.index_uid.clone(),
+                source_id: "foo".to_string(),
+                pipeline_uid: PipelineUid::default(),
+            },
         );
         let (merge_uploader_mailbox, merge_uploader_handle) = ctx
             .spawn_actor()
@@ -295,7 +308,17 @@ impl MergePipeline {
 
         // Merge Packager
         let tag_fields = self.params.doc_mapper.tag_named_fields()?;
-        let merge_packager = Packager::new("MergePackager", tag_fields, merge_uploader_mailbox);
+        let merge_packager = Packager::new(
+            "MergePackager", 
+            tag_fields, 
+            merge_uploader_mailbox,
+            IndexingPipelineId{
+                node_id: self.params.pipeline_id.node_id.clone(),
+                index_uid: self.params.pipeline_id.index_uid.clone(),
+                source_id: "foo".to_string(),
+                pipeline_uid: PipelineUid::default(),
+            },
+        );
         let (merge_packager_mailbox, merge_packager_handle) = ctx
             .spawn_actor()
             .set_kill_switch(self.kill_switch.clone())

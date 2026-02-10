@@ -67,6 +67,7 @@ mod tests {
 
     use quickwit_actors::{Health, Supervisable, Universe};
     use quickwit_config::{SourceInputFormat, SourceParams};
+    use quickwit_proto::indexing::IndexingPipelineId;
     use quickwit_proto::types::IndexUid;
     use serde_json::json;
 
@@ -112,6 +113,7 @@ mod tests {
         let void_source_actor = SourceActor {
             source: Box::new(void_source),
             doc_processor_mailbox,
+            pipeline_id: IndexingPipelineId::default(),
         };
         let (_, void_source_handle) = universe.spawn_builder().spawn(void_source_actor);
         matches!(void_source_handle.check_health(true), Health::Healthy);

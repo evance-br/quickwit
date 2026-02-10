@@ -29,6 +29,7 @@ use quickwit_common::spawn_named_task;
 use quickwit_config::RetentionPolicy;
 use quickwit_metastore::checkpoint::IndexCheckpointDelta;
 use quickwit_metastore::{SplitMetadata, StageSplitsRequestExt};
+use quickwit_proto::indexing::IndexingPipelineId;
 use quickwit_proto::metastore::{MetastoreService, MetastoreServiceClient, StageSplitsRequest};
 use quickwit_proto::search::{ReportSplit, ReportSplitsRequest};
 use quickwit_proto::types::{IndexUid, PublishToken};
@@ -168,6 +169,7 @@ pub struct Uploader {
     max_concurrent_split_uploads: usize,
     counters: UploaderCounters,
     event_broker: EventBroker,
+    pipeline_id: IndexingPipelineId,
 }
 
 impl Uploader {
@@ -181,6 +183,7 @@ impl Uploader {
         split_update_mailbox: SplitsUpdateMailbox,
         max_concurrent_split_uploads: usize,
         event_broker: EventBroker,
+        pipeline_id: IndexingPipelineId,
     ) -> Uploader {
         Uploader {
             uploader_type,
@@ -192,6 +195,7 @@ impl Uploader {
             max_concurrent_split_uploads,
             counters: Default::default(),
             event_broker,
+            pipeline_id,
         }
     }
     async fn acquire_semaphore(
@@ -258,6 +262,15 @@ impl Actor for Uploader {
 
     fn name(&self) -> String {
         format!("{:?}", self.uploader_type)
+    }
+
+    async fn finalize(&mut self, exit_status: &quickwit_actors::ActorExitStatus, _ctx: &ActorContext<Self>) -> anyhow::Result<()> {
+        tracing::debug!(
+            pipeline_id=%self.pipeline_id,
+            exit_status=?exit_status, 
+            "finalize uploader actor"
+        );
+        Ok(())
     }
 }
 
@@ -567,6 +580,7 @@ mod tests {
             SplitsUpdateMailbox::Sequencer(sequencer_mailbox),
             4,
             event_broker,
+            IndexingPipelineId::default(),
         );
         let (uploader_mailbox, uploader_handle) = universe.spawn_builder().spawn(uploader);
         let split_scratch_directory = TempDirectory::for_test();
@@ -683,6 +697,7 @@ mod tests {
             SplitsUpdateMailbox::Sequencer(sequencer_mailbox),
             4,
             EventBroker::default(),
+            IndexingPipelineId::default(),
         );
         let (uploader_mailbox, uploader_handle) = universe.spawn_builder().spawn(uploader);
         let split_scratch_directory_1 = TempDirectory::for_test();
@@ -831,6 +846,7 @@ mod tests {
             SplitsUpdateMailbox::Publisher(publisher_mailbox),
             4,
             EventBroker::default(),
+            IndexingPipelineId::default(),
         );
         let (uploader_mailbox, uploader_handle) = universe.spawn_builder().spawn(uploader);
         let split_scratch_directory = TempDirectory::for_test();
@@ -905,6 +921,7 @@ mod tests {
             SplitsUpdateMailbox::Sequencer(sequencer_mailbox),
             4,
             EventBroker::default(),
+            IndexingPipelineId::default(),
         );
         let (uploader_mailbox, uploader_handle) = universe.spawn_builder().spawn(uploader);
         let checkpoint_delta = IndexCheckpointDelta {
@@ -1010,6 +1027,7 @@ mod tests {
             SplitsUpdateMailbox::Publisher(publisher_mailbox),
             4,
             event_broker,
+            IndexingPipelineId::default(),
         );
         let (uploader_mailbox, uploader_handle) = universe.spawn_builder().spawn(uploader);
         let split_scratch_directory = TempDirectory::for_test();

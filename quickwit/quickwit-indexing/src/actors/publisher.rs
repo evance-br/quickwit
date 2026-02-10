@@ -17,6 +17,7 @@ use async_trait::async_trait;
 use fail::fail_point;
 use quickwit_actors::{Actor, ActorContext, Handler, Mailbox, QueueCapacity};
 use quickwit_proto::metastore::{MetastoreService, MetastoreServiceClient, PublishSplitsRequest};
+use quickwit_proto::indexing::IndexingPipelineId;
 use serde::Serialize;
 use tracing::{info, instrument, warn};
 
@@ -58,6 +59,7 @@ pub struct Publisher {
     merge_planner_mailbox_opt: Option<Mailbox<MergePlanner>>,
     source_mailbox_opt: Option<Mailbox<SourceActor>>,
     counters: PublisherCounters,
+    pipeline_id: IndexingPipelineId,
 }
 
 impl Publisher {
@@ -66,6 +68,7 @@ impl Publisher {
         metastore: MetastoreServiceClient,
         merge_planner_mailbox_opt: Option<Mailbox<MergePlanner>>,
         source_mailbox_opt: Option<Mailbox<SourceActor>>,
+        pipeline_id: IndexingPipelineId,
     ) -> Publisher {
         Publisher {
             publisher_type,
@@ -73,6 +76,7 @@ impl Publisher {
             merge_planner_mailbox_opt,
             source_mailbox_opt,
             counters: PublisherCounters::default(),
+            pipeline_id,
         }
     }
 }
@@ -94,6 +98,15 @@ impl Actor for Publisher {
             PublisherType::MainPublisher => QueueCapacity::Bounded(1),
             PublisherType::MergePublisher => QueueCapacity::Unbounded,
         }
+    }
+
+    async fn finalize(&mut self, exit_status: &quickwit_actors::ActorExitStatus, _ctx: &ActorContext<Self>) -> anyhow::Result<()> {
+        tracing::debug!(
+            pipeline_id=%self.pipeline_id,
+            exit_status=?exit_status, 
+            "finalize publisher actor"
+        );
+        Ok(())
     }
 }
 
@@ -251,6 +264,7 @@ mod tests {
             MetastoreServiceClient::from_mock(mock_metastore),
             Some(merge_planner_mailbox),
             Some(source_mailbox),
+            IndexingPipelineId::default(),
         );
         let (publisher_mailbox, publisher_handle) = universe.spawn_builder().spawn(publisher);
 
@@ -327,6 +341,7 @@ mod tests {
             MetastoreServiceClient::from_mock(mock_metastore),
             Some(merge_planner_mailbox),
             Some(source_mailbox),
+            IndexingPipelineId::default(),
         );
         let (publisher_mailbox, publisher_handle) = universe.spawn_builder().spawn(publisher);
 
@@ -395,6 +410,7 @@ mod tests {
             MetastoreServiceClient::from_mock(mock_metastore),
             Some(merge_planner_mailbox),
             None,
+            IndexingPipelineId::default(),
         );
         let (publisher_mailbox, publisher_handle) = universe.spawn_builder().spawn(publisher);
         let publisher_message = SplitsUpdate {
@@ -435,6 +451,7 @@ mod tests {
             MetastoreServiceClient::from_mock(mock_metastore),
             Some(merge_planner_mailbox),
             None,
+            IndexingPipelineId::default(),
         );
         let (publisher_mailbox, publisher_handle) = universe.spawn_builder().spawn(publisher);
 

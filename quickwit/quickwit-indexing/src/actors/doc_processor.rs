@@ -29,6 +29,7 @@ use quickwit_opentelemetry::otlp::{
     parse_otlp_logs_json, parse_otlp_logs_protobuf, parse_otlp_spans_json,
     parse_otlp_spans_protobuf, JsonLogIterator, JsonSpanIterator, OtlpLogsError, OtlpTracesError,
 };
+use quickwit_proto::indexing::IndexingPipelineId;
 use quickwit_proto::types::{IndexId, SourceId};
 use serde::Serialize;
 use serde_json::Value as JsonValue;
@@ -412,6 +413,7 @@ pub struct DocProcessor {
     #[cfg(feature = "vrl")]
     transform_opt: Option<VrlProgram>,
     input_format: SourceInputFormat,
+    pipeline_id: IndexingPipelineId,
 }
 
 impl DocProcessor {
@@ -422,6 +424,7 @@ impl DocProcessor {
         indexer_mailbox: Mailbox<Indexer>,
         transform_config_opt: Option<TransformConfig>,
         input_format: SourceInputFormat,
+        pipeline_id: IndexingPipelineId,
     ) -> anyhow::Result<Self> {
         let timestamp_field_opt = extract_timestamp_field(&doc_mapper)?;
         if cfg!(not(feature = "vrl")) && transform_config_opt.is_some() {
@@ -438,6 +441,7 @@ impl DocProcessor {
                 .map(VrlProgram::try_from_transform_config)
                 .transpose()?,
             input_format,
+            pipeline_id,
         })
     }
 
@@ -547,6 +551,11 @@ impl Actor for DocProcessor {
         exit_status: &ActorExitStatus,
         ctx: &ActorContext<Self>,
     ) -> anyhow::Result<()> {
+        tracing::debug!(
+            pipeline_id=%self.pipeline_id,
+            exit_status=?exit_status, 
+            "finalize doc_processor actor"
+        );
         match exit_status {
             ActorExitStatus::DownstreamClosed
             | ActorExitStatus::Killed
@@ -658,6 +667,7 @@ mod tests {
             indexer_mailbox,
             None,
             SourceInputFormat::Json,
+            IndexingPipelineId::default(),
         )
         .unwrap();
         let (doc_processor_mailbox, doc_processor_handle) =
@@ -745,6 +755,7 @@ mod tests {
             indexer_mailbox,
             None,
             SourceInputFormat::Json,
+            IndexingPipelineId::default(),
         )
         .unwrap();
         let (doc_processor_mailbox, doc_processor_handle) =
@@ -793,6 +804,7 @@ mod tests {
             indexer_mailbox,
             None,
             SourceInputFormat::Json,
+            IndexingPipelineId::default(),
         )
         .unwrap();
         let (doc_processor_mailbox, doc_processor_handle) =
@@ -825,6 +837,7 @@ mod tests {
             indexer_mailbox,
             None,
             SourceInputFormat::Json,
+            IndexingPipelineId::default(),
         )
         .unwrap();
         let (doc_processor_mailbox, doc_processor_handle) =
@@ -871,6 +884,7 @@ mod tests {
             indexer_mailbox,
             None,
             SourceInputFormat::OtlpLogsJson,
+            IndexingPipelineId::default(),
         )
         .unwrap();
 
@@ -948,6 +962,7 @@ mod tests {
             indexer_mailbox,
             None,
             SourceInputFormat::OtlpLogsProtobuf,
+            IndexingPipelineId::default(),
         )
         .unwrap();
 
@@ -1027,6 +1042,7 @@ mod tests {
             indexer_mailbox,
             None,
             SourceInputFormat::OtlpTracesJson,
+            IndexingPipelineId::default(),
         )
         .unwrap();
 
@@ -1100,6 +1116,7 @@ mod tests {
             indexer_mailbox,
             None,
             SourceInputFormat::OtlpTracesProtobuf,
+            IndexingPipelineId::default(),
         )
         .unwrap();
 

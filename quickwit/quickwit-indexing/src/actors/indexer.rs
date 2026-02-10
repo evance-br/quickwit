@@ -368,6 +368,7 @@ pub struct Indexer {
     index_serializer_mailbox: Mailbox<IndexSerializer>,
     indexing_workbench_opt: Option<IndexingWorkbench>,
     counters: IndexerCounters,
+    pipeline_id: IndexingPipelineId,
 }
 
 #[async_trait]
@@ -445,6 +446,11 @@ impl Actor for Indexer {
         exit_status: &ActorExitStatus,
         ctx: &ActorContext<Self>,
     ) -> anyhow::Result<()> {
+        tracing::debug!(
+            pipeline_id=%self.pipeline_id,
+            exit_status=?exit_status, 
+            "finalize indexer actor"
+        );
         match exit_status {
             ActorExitStatus::DownstreamClosed
             | ActorExitStatus::Killed
@@ -562,7 +568,7 @@ impl Indexer {
             });
         Self {
             indexer_state: IndexerState {
-                pipeline_id,
+                pipeline_id: pipeline_id.clone(),
                 metastore: metastore.clone(),
                 indexing_directory,
                 indexing_settings,
@@ -578,6 +584,7 @@ impl Indexer {
             index_serializer_mailbox,
             indexing_workbench_opt: None,
             counters: IndexerCounters::default(),
+            pipeline_id: pipeline_id.clone(),
         }
     }
 

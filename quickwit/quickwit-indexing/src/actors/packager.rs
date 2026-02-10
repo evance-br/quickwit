@@ -43,6 +43,7 @@ const MAX_VALUES_PER_TAG_FIELD: usize = if cfg!(any(test, feature = "testsuite")
     1000
 };
 
+use quickwit_proto::indexing::IndexingPipelineId;
 use crate::actors::Uploader;
 use crate::models::{
     EmptySplit, IndexedSplit, IndexedSplitBatch, PackagedSplit, PackagedSplitBatch,
@@ -65,6 +66,7 @@ pub struct Packager {
     uploader_mailbox: Mailbox<Uploader>,
     /// List of tag fields ([`Vec<NamedField>`]) defined in the index config.
     tag_fields: Vec<NamedField>,
+    pipeline_id: IndexingPipelineId,
 }
 
 impl Packager {
@@ -72,11 +74,13 @@ impl Packager {
         actor_name: &'static str,
         tag_fields: Vec<NamedField>,
         uploader_mailbox: Mailbox<Uploader>,
+        pipeline_id: IndexingPipelineId,
     ) -> Packager {
         Packager {
             actor_name,
             uploader_mailbox,
             tag_fields,
+            pipeline_id,
         }
     }
 
@@ -112,6 +116,15 @@ impl Actor for Packager {
 
     fn runtime_handle(&self) -> Handle {
         RuntimeType::Blocking.get_runtime_handle()
+    }
+
+    async fn finalize(&mut self, exit_status: &quickwit_actors::ActorExitStatus, _ctx: &ActorContext<Self>) -> anyhow::Result<()> {
+        tracing::debug!(
+            pipeline_id=%self.pipeline_id,
+            exit_status=?exit_status, 
+            "finalize packager actor"
+        );
+        Ok(())
     }
 }
 
@@ -561,7 +574,7 @@ mod tests {
                 "tag_str", "tag_many", "tag_u64", "tag_i64", "tag_f64", "tag_bool",
             ],
         );
-        let packager = Packager::new("TestPackager", tag_fields, mailbox);
+        let packager = Packager::new("TestPackager", tag_fields, mailbox, IndexingPipelineId::default());
         let (packager_mailbox, packager_handle) = universe.spawn_builder().spawn(packager);
         packager_mailbox
             .send_message(IndexedSplitBatch {

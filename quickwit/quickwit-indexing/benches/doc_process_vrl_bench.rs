@@ -8,6 +8,7 @@ use quickwit_doc_mapper::DocMapper;
 use quickwit_indexing::actors::DocProcessor;
 use quickwit_indexing::models::RawDocBatch;
 use quickwit_metastore::checkpoint::SourceCheckpointDelta;
+use quickwit_proto::indexing::IndexingPipelineId;
 
 const JSON_NORMAL: &str = include_str!("data/bench_data.json");
 const JSON_LIGHT_TRANSFORM: &str = include_str!("data/bench_data_light_transform.json");
@@ -129,6 +130,7 @@ fn create_doc_processor(
         indexer_mailbox,
         transform_config_opt,
         SourceInputFormat::Json,
+        IndexingPipelineId::default(),
     )
     .unwrap();
     let (mailbox, handle) = universe.spawn_builder().spawn(doc_processor);

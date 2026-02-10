@@ -258,6 +258,7 @@ mod tests {
     };
     use quickwit_ingest::{init_ingest_api, CommitType, DocBatchBuilder, IngestRequest};
     use quickwit_metastore::checkpoint::SourceCheckpointDelta;
+    use quickwit_proto::indexing::IndexingPipelineId;
     use quickwit_proto::types::{IndexId, IndexUid};
 
     use super::*;
@@ -320,6 +321,7 @@ mod tests {
         let ingest_api_source_actor = SourceActor {
             source: Box::new(ingest_api_source),
             doc_processor_mailbox,
+            pipeline_id: IndexingPipelineId::default(),
         };
         let (_ingest_api_source_mailbox, ingest_api_source_handle) =
             universe.spawn_builder().spawn(ingest_api_source_actor);
@@ -429,6 +431,7 @@ mod tests {
         let ingest_api_source_actor = SourceActor {
             source: Box::new(ingest_api_source),
             doc_processor_mailbox,
+            pipeline_id: IndexingPipelineId::default(),
         };
         let (_ingest_api_source_mailbox, ingest_api_source_handle) =
             universe.spawn_builder().spawn(ingest_api_source_actor);
@@ -481,6 +484,7 @@ mod tests {
         let ingest_api_source_actor = SourceActor {
             source: Box::new(ingest_api_source),
             doc_processor_mailbox,
+            pipeline_id: IndexingPipelineId::default(),
         };
         let (_ingest_api_source_mailbox, ingest_api_source_handle) =
             universe.spawn_builder().spawn(ingest_api_source_actor);
@@ -532,6 +536,7 @@ mod tests {
         let ingest_api_source_actor = SourceActor {
             source: Box::new(ingest_api_source),
             doc_processor_mailbox,
+            pipeline_id: IndexingPipelineId::default(),
         };
         let (_ingest_api_source_mailbox, ingest_api_source_handle) =
             universe.spawn_builder().spawn(ingest_api_source_actor);
@@ -596,6 +601,7 @@ mod tests {
         let ingest_api_source_actor = SourceActor {
             source: Box::new(ingest_api_source),
             doc_processor_mailbox,
+            pipeline_id: IndexingPipelineId::default(),
         };
         let (_ingest_api_source_mailbox, ingest_api_source_handle) =
             universe.spawn_builder().spawn(ingest_api_source_actor);
@@ -692,6 +698,7 @@ mod tests {
         let ingest_api_source_actor = SourceActor {
             source: Box::new(ingest_api_source),
             doc_processor_mailbox,
+            pipeline_id: IndexingPipelineId::default(),
         };
         let (ingest_api_source_mailbox, ingest_api_source_handle) =
             universe.spawn_builder().spawn(ingest_api_source_actor);

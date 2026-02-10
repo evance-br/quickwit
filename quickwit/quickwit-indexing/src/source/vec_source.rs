@@ -135,6 +135,7 @@ mod tests {
     use quickwit_actors::{Actor, Command, Universe};
     use quickwit_config::{SourceConfig, SourceInputFormat, SourceParams};
     use quickwit_proto::types::IndexUid;
+    use quickwit_proto::indexing::IndexingPipelineId;
     use serde_json::json;
 
     use super::*;
@@ -168,6 +169,7 @@ mod tests {
         let vec_source_actor = SourceActor {
             source: Box::new(vec_source),
             doc_processor_mailbox,
+            pipeline_id: IndexingPipelineId::default(),
         };
         assert_eq!(
             vec_source_actor.name(),
@@ -219,6 +221,7 @@ mod tests {
         let vec_source_actor = SourceActor {
             source: Box::new(vec_source),
             doc_processor_mailbox,
+            pipeline_id: IndexingPipelineId::default(),
         };
         let (_vec_source_mailbox, vec_source_handle) =
             universe.spawn_builder().spawn(vec_source_actor);

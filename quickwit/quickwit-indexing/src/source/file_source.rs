@@ -206,6 +206,7 @@ mod tests {
     use quickwit_common::uri::Uri;
     use quickwit_config::{SourceConfig, SourceInputFormat, SourceParams};
     use quickwit_metastore::checkpoint::{PartitionId, SourceCheckpointDelta};
+    use quickwit_proto::indexing::IndexingPipelineId;
     use quickwit_proto::types::{IndexUid, Position};
 
     use super::*;
@@ -246,6 +247,7 @@ mod tests {
         let file_source_actor = SourceActor {
             source: Box::new(file_source),
             doc_processor_mailbox,
+            pipeline_id: IndexingPipelineId::default(),
         };
         let (_file_source_mailbox, file_source_handle) =
             universe.spawn_builder().spawn(file_source_actor);
@@ -298,6 +300,7 @@ mod tests {
         let file_source_actor = SourceActor {
             source: Box::new(file_source),
             doc_processor_mailbox,
+            pipeline_id: IndexingPipelineId::default(),
         };
         let (_file_source_mailbox, file_source_handle) =
             universe.spawn_builder().spawn(file_source_actor);
@@ -374,6 +377,7 @@ mod tests {
         let file_source_actor = SourceActor {
             source: Box::new(file_source),
             doc_processor_mailbox,
+            pipeline_id: IndexingPipelineId::default(),
         };
         let (_file_source_mailbox, file_source_handle) =
             universe.spawn_builder().spawn(file_source_actor);

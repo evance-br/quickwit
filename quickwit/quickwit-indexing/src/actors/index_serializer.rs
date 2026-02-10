@@ -21,6 +21,7 @@ use tracing::instrument;
 
 use crate::actors::Packager;
 use crate::models::{EmptySplit, IndexedSplit, IndexedSplitBatch, IndexedSplitBatchBuilder};
+use quickwit_proto::indexing::IndexingPipelineId;
 
 /// The index serializer takes a non-serialized split,
 /// and serializes it before passing it to the packager.
@@ -32,11 +33,12 @@ use crate::models::{EmptySplit, IndexedSplit, IndexedSplitBatch, IndexedSplitBat
 /// it can range from medium IO to IO heavy.
 pub struct IndexSerializer {
     packager_mailbox: Mailbox<Packager>,
+    pipeline_id: IndexingPipelineId,
 }
 
 impl IndexSerializer {
-    pub fn new(packager_mailbox: Mailbox<Packager>) -> Self {
-        Self { packager_mailbox }
+    pub fn new(packager_mailbox: Mailbox<Packager>, pipeline_id: IndexingPipelineId) -> Self {
+        Self { packager_mailbox, pipeline_id }
     }
 }
 
@@ -52,6 +54,15 @@ impl Actor for IndexSerializer {
 
     fn runtime_handle(&self) -> Handle {
         RuntimeType::Blocking.get_runtime_handle()
+    }
+
+    async fn finalize(&mut self, exit_status: &quickwit_actors::ActorExitStatus, _ctx: &ActorContext<Self>) -> anyhow::Result<()> {
+        tracing::debug!(
+            pipeline_id=%self.pipeline_id,
+            exit_status=?exit_status, 
+            "finalize index_serializer actor"
+        );
+        Ok(())
     }
 }
 

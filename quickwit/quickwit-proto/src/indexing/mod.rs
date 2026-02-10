@@ -111,7 +111,7 @@ impl From<AskError<IndexingError>> for IndexingError {
 
 /// Uniquely identifies an indexing pipeline. There can be multiple indexing pipelines per
 /// source `(index_uid, source_id)` running simultaneously on an indexer.
-#[derive(Clone, Debug, Hash, Eq, PartialEq)]
+#[derive(Clone, Debug, Hash, Eq, PartialEq, Default)]
 pub struct IndexingPipelineId {
     pub node_id: NodeId,
     pub index_uid: IndexUid,
