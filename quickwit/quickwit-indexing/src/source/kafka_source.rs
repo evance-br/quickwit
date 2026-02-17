@@ -464,11 +464,8 @@ impl Source for KafkaSource {
         tokio::pin!(deadline);
 
         info!(
-            index_id=%self.source_runtime.index_id(),
-            source_id=%self.source_runtime.source_id(),
-            topic=%self.topic,
-            group_id=%self.group_id,
-            "starting Kafka source emit_batches"
+            pipeline_id=%self.source_runtime.pipeline_id(),
+            "kafka_source: emit_batches [start]"
         );
         loop {
             tokio::select! {
@@ -492,26 +489,25 @@ impl Source for KafkaSource {
             ctx.record_progress();
         }
 
-        info!(
-            index_id=%self.source_runtime.index_id(),
-            source_id=%self.source_runtime.source_id(),
-            topic=%self.topic,
-            group_id=%self.group_id,
-            num_docs=%batch_builder.docs.len(),
-            "ending Kafka source emit_batches"
-        );
         if !batch_builder.checkpoint_delta.is_empty() {
             debug!(
+                pipeline_id=%self.source_runtime.pipeline_id(),
                 num_docs=%batch_builder.docs.len(),
-                num_bytes=%batch_builder.num_bytes,
-                num_millis=%now.elapsed().as_millis(),
-                "sending doc batch to indexer"
+                "kafka_source: sending doc batch to indexer"
             );
             let message = batch_builder.build();
             ctx.send_message(doc_processor_mailbox, message).await?;
         }
+        info!(
+            pipeline_id=%self.source_runtime.pipeline_id(),
+            "kafka_source: emit_batches [end]"
+        );
         if self.should_exit() {
-            info!(topic = %self.topic, "reached end of topic");
+            info!(
+                pipeline_id=%self.source_runtime.pipeline_id(),
+                topic = %self.topic,
+                "reached end of topic"
+            );
             ctx.send_exit_with_success(doc_processor_mailbox).await?;
             return Err(ActorExitStatus::Success);
         }

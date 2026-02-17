@@ -80,6 +80,10 @@ impl Handler<IndexedSplitBatchBuilder> for IndexSerializer {
         batch_builder: IndexedSplitBatchBuilder,
         ctx: &ActorContext<Self>,
     ) -> Result<(), ActorExitStatus> {
+        tracing::debug!(
+            pipeline_id=%self.pipeline_id,
+            "index_serializer: handle IndexedSplitBatchBuilder [start]"
+        );
         let mut splits: Vec<IndexedSplit> = Vec::with_capacity(batch_builder.splits.len());
         for split_builder in batch_builder.splits {
             // TODO Consider & test removing this protect guard.
@@ -106,6 +110,10 @@ impl Handler<IndexedSplitBatchBuilder> for IndexSerializer {
         };
         ctx.send_message(&self.packager_mailbox, indexed_split_batch)
             .await?;
+        tracing::debug!(
+            pipeline_id=%self.pipeline_id,
+            "index_serializer: handle IndexedSplitBatchBuilder [end]"
+        );
         Ok(())
     }
 }
@@ -124,8 +132,16 @@ impl Handler<EmptySplit> for IndexSerializer {
         empty_split: EmptySplit,
         ctx: &ActorContext<Self>,
     ) -> Result<(), ActorExitStatus> {
+        tracing::debug!(
+            pipeline_id=%self.pipeline_id,
+            "index_serializer: handle EmptySplit [start]"
+        );
         ctx.send_message(&self.packager_mailbox, empty_split)
             .await?;
+        tracing::debug!(
+            pipeline_id=%self.pipeline_id,
+            "index_serializer: handle EmptySplit [end]"
+        );
         Ok(())
     }
 }

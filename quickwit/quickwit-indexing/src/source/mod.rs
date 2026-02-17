@@ -375,6 +375,10 @@ impl Handler<Loop> for SourceActor {
     type Reply = ();
 
     async fn handle(&mut self, _message: Loop, ctx: &SourceContext) -> Result<(), ActorExitStatus> {
+        tracing::debug!(
+            pipeline_id=%self.pipeline_id,
+            "source: handle loop [start]"
+        );
         let wait_for = self
             .source
             .emit_batches(&self.doc_processor_mailbox, ctx)
@@ -384,6 +388,10 @@ impl Handler<Loop> for SourceActor {
             return Ok(());
         }
         ctx.schedule_self_msg(wait_for, Loop);
+        tracing::debug!(
+            pipeline_id=%self.pipeline_id,
+            "source: handle loop [end]"
+        );
         Ok(())
     }
 }

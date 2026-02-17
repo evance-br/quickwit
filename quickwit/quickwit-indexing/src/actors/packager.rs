@@ -138,6 +138,10 @@ impl Handler<IndexedSplitBatch> for Packager {
         batch: IndexedSplitBatch,
         ctx: &ActorContext<Self>,
     ) -> Result<(), ActorExitStatus> {
+        tracing::debug!(
+            pipeline_id=%self.pipeline_id,
+            "packager: handle IndexedSplitBatch [start]"
+        );
         let split_ids: Vec<String> = batch
             .splits
             .iter()
@@ -161,6 +165,10 @@ impl Handler<IndexedSplitBatch> for Packager {
             let packaged_split = self.process_indexed_split(split, ctx).await?;
             packaged_splits.push(packaged_split);
         }
+        tracing::debug!(
+            pipeline_id=%self.pipeline_id,
+            "packager: handle IndexedSplitBatch [sending packaged split to uploader]"
+        );
         ctx.send_message(
             &self.uploader_mailbox,
             PackagedSplitBatch::new(
@@ -173,6 +181,10 @@ impl Handler<IndexedSplitBatch> for Packager {
             ),
         )
         .await?;
+        tracing::debug!(
+            pipeline_id=%self.pipeline_id,
+            "packager: handle IndexedSplitBatch [end]"
+        );
         fail_point!("packager:after");
         Ok(())
     }

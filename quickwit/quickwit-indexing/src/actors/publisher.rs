@@ -135,6 +135,10 @@ impl Handler<SplitsUpdate> for Publisher {
         split_update: SplitsUpdate,
         ctx: &ActorContext<Self>,
     ) -> Result<(), quickwit_actors::ActorExitStatus> {
+        tracing::debug!(
+            pipeline_id=%self.pipeline_id,
+            "publisher: handle splits update [start]"
+        );
         fail_point!("publisher:before");
 
         let SplitsUpdate {
@@ -216,6 +220,10 @@ impl Handler<SplitsUpdate> for Publisher {
             self.counters.num_empty_splits += 1;
         }
         fail_point!("publisher:after");
+        tracing::debug!(
+            pipeline_id=%self.pipeline_id,
+            "publisher: handle splits update [end]"
+        );
         Ok(())
     }
 }

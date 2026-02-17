@@ -286,6 +286,10 @@ impl Handler<PackagedSplitBatch> for Uploader {
         batch: PackagedSplitBatch,
         ctx: &ActorContext<Self>,
     ) -> Result<(), ActorExitStatus> {
+        tracing::debug!(
+            pipeline_id=%self.pipeline_id,
+            "uploader: handle PackagedSplitBatch [start]"
+        );
         fail_point!("uploader:before");
         let split_update_sender = self
             .split_update_mailbox
@@ -316,8 +320,13 @@ impl Handler<PackagedSplitBatch> for Uploader {
         let retention_policy = self.retention_policy.clone();
         debug!(split_ids=?split_ids, "start-stage-and-store-splits");
         let event_broker = self.event_broker.clone();
+        let pipeline_id = self.pipeline_id.clone();
         spawn_named_task(
             async move {
+                tracing::debug!(
+                    pipeline_id=%pipeline_id,
+                    "uploader: handle PackagedSplitBatch [start split upload task]"
+                );
                 fail_point!("uploader:intask:before");
 
                 let mut split_metadata_list = Vec::with_capacity(batch.splits.len());
@@ -419,6 +428,12 @@ impl Handler<PackagedSplitBatch> for Uploader {
                     warn!(cause=?e, target, "failed to send uploaded split");
                     return;
                 }
+
+                tracing::debug!(
+                    pipeline_id=%pipeline_id,
+                    "uploader: handle PackagedSplitBatch [end split upload task]"
+                );
+
                 // We explicitly drop it in order to force move the permit guard into the async
                 // task.
                 mem::drop(permit_guard);
@@ -427,6 +442,10 @@ impl Handler<PackagedSplitBatch> for Uploader {
             "upload_single_task"
         );
         fail_point!("uploader:intask:after");
+        tracing::debug!(
+            pipeline_id=%self.pipeline_id,
+            "uploader: handle PackagedSplitBatch [end]"
+        );
         Ok(())
     }
 }
@@ -445,6 +464,10 @@ impl Handler<EmptySplit> for Uploader {
         empty_split: EmptySplit,
         ctx: &ActorContext<Self>,
     ) -> Result<(), ActorExitStatus> {
+        tracing::debug!(
+            pipeline_id=%self.pipeline_id,
+            "uploader: handle EmptySplit [start]"
+        );
         let split_update_sender = self
             .split_update_mailbox
             .get_split_update_sender(ctx)
@@ -461,6 +484,10 @@ impl Handler<EmptySplit> for Uploader {
         };
 
         split_update_sender.send(splits_update, ctx).await?;
+        tracing::debug!(
+            pipeline_id=%self.pipeline_id,
+            "uploader: handle EmptySplit [end]"
+        );
         Ok(())
     }
 }

@@ -483,13 +483,25 @@ impl Handler<CommitTimeout> for Indexer {
         commit_timeout: CommitTimeout,
         ctx: &ActorContext<Self>,
     ) -> Result<(), ActorExitStatus> {
+        tracing::debug!(
+            pipeline_id=%self.pipeline_id,
+            "indexer: handle CommitTimeout [start]"
+        );
         if let Some(indexing_workbench) = &self.indexing_workbench_opt {
             // If this is a timeout for a different workbench, we must ignore it.
             if indexing_workbench.workbench_id != commit_timeout.workbench_id {
+                tracing::debug!(
+                    pipeline_id=%self.pipeline_id,
+                    "indexer: handle CommitTimeout [end]: different workbench"
+                );
                 return Ok(());
             }
         }
         self.send_to_serializer(CommitTrigger::Timeout, ctx).await?;
+        tracing::debug!(
+            pipeline_id=%self.pipeline_id,
+            "indexer: handle CommitTimeout [end]"
+        );
         Ok(())
     }
 }
@@ -503,7 +515,17 @@ impl Handler<ProcessedDocBatch> for Indexer {
         doc_batch: ProcessedDocBatch,
         ctx: &ActorContext<Self>,
     ) -> Result<(), ActorExitStatus> {
-        self.index_batch(doc_batch, ctx).await
+        tracing::debug!(
+            pipeline_id=%self.pipeline_id,
+            "indexer: handle ProcessedDocBatch [start]"
+        );
+        let result = self.index_batch(doc_batch, ctx).await;
+        tracing::debug!(
+            pipeline_id=%self.pipeline_id,
+            result=?result.is_ok(),
+            "indexer: handle ProcessedDocBatch [end]",
+        );
+        result
     }
 }
 

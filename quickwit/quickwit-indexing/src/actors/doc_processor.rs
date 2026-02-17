@@ -578,6 +578,10 @@ impl Handler<RawDocBatch> for DocProcessor {
         raw_doc_batch: RawDocBatch,
         ctx: &ActorContext<Self>,
     ) -> Result<(), ActorExitStatus> {
+        tracing::debug!(
+            pipeline_id=%self.pipeline_id,
+            "doc_processor: [start]"
+        );
         if self.publish_lock.is_dead() {
             return Ok(());
         }
@@ -593,8 +597,16 @@ impl Handler<RawDocBatch> for DocProcessor {
             raw_doc_batch.checkpoint_delta,
             raw_doc_batch.force_commit,
         );
+        tracing::debug!(
+            pipeline_id=%self.pipeline_id,
+            "doc_processor: [sending processed doc batch]"
+        );
         ctx.send_message(&self.indexer_mailbox, processed_doc_batch)
             .await?;
+        tracing::debug!(
+            pipeline_id=%self.pipeline_id,
+            "doc_processor: [end]"
+        );
         Ok(())
     }
 }

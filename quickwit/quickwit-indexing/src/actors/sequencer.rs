@@ -84,6 +84,10 @@ where
         message: oneshot::Receiver<SequencerCommand<M>>,
         ctx: &ActorContext<Self>,
     ) -> Result<(), ActorExitStatus> {
+        tracing::debug!(
+            pipeline_id=%self.pipeline_id,
+            "sequencer: handle sequencer command [start]"
+        );
         let command = ctx
             .protect_future(message)
             .await
@@ -93,6 +97,10 @@ where
                 .await
                 .context("failed to send message to publisher")?;
         }
+        tracing::debug!(
+            pipeline_id=%self.pipeline_id,
+            "sequencer: handle sequencer command [end]"
+        );
         Ok(())
     }
 }
