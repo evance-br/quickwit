@@ -464,7 +464,7 @@ impl Source for KafkaSource {
         tokio::pin!(deadline);
 
         info!(
-            pipeline_id=%self.source_runtime.pipeline_id(),
+            pipeline_id=%self.source_runtime.pipeline_id,
             "kafka_source: emit_batches [start]"
         );
         loop {
@@ -491,7 +491,7 @@ impl Source for KafkaSource {
 
         if !batch_builder.checkpoint_delta.is_empty() {
             debug!(
-                pipeline_id=%self.source_runtime.pipeline_id(),
+                pipeline_id=%self.source_runtime.pipeline_id,
                 num_docs=%batch_builder.docs.len(),
                 "kafka_source: sending doc batch to indexer"
             );
@@ -499,12 +499,12 @@ impl Source for KafkaSource {
             ctx.send_message(doc_processor_mailbox, message).await?;
         }
         info!(
-            pipeline_id=%self.source_runtime.pipeline_id(),
+            pipeline_id=%self.source_runtime.pipeline_id,
             "kafka_source: emit_batches [end]"
         );
         if self.should_exit() {
             info!(
-                pipeline_id=%self.source_runtime.pipeline_id(),
+                pipeline_id=%self.source_runtime.pipeline_id,
                 topic = %self.topic,
                 "reached end of topic"
             );

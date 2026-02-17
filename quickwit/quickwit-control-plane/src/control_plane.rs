@@ -661,6 +661,9 @@ impl Handler<AddSourceRequest> for ControlPlane {
         request: AddSourceRequest,
         ctx: &ActorContext<Self>,
     ) -> Result<Self::Reply, ActorExitStatus> {
+        tracing::debug!(
+            "control_plane: add_source [start]"
+        );
         let index_uid: IndexUid = request.index_uid().clone();
         let source_config: SourceConfig =
             match serde_utils::from_json_str(&request.source_config_json) {
@@ -673,6 +676,10 @@ impl Handler<AddSourceRequest> for ControlPlane {
         debug!(%index_uid, source_id, "adding source");
 
         if let Err(error) = ctx.protect_future(self.metastore.add_source(request)).await {
+            error!(
+                error=?error,
+                "control_plane: error adding source"
+            );
             return Ok(Err(ControlPlaneError::from(error)));
         };
         self.model

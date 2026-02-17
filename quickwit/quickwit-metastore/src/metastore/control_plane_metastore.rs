@@ -96,7 +96,13 @@ impl MetastoreService for ControlPlaneMetastore {
     }
 
     async fn add_source(&self, request: AddSourceRequest) -> MetastoreResult<EmptyResponse> {
+        tracing::debug!(
+            "control_plane_metastore: add_source [start]"
+        );
         let response = self.control_plane.add_source(request).await?;
+        tracing::debug!(
+            "control_plane_metastore: add_source [end]"
+        );
         Ok(response)
     }
 
