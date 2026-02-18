@@ -442,6 +442,10 @@ impl IndexService {
         index_uid: IndexUid,
         source_config: SourceConfig,
     ) -> Result<SourceConfig, IndexServiceError> {
+        tracing::debug!(
+            source_id=?source_config.source_id,
+            "index_service: add_source [start]"
+        );
         let source_id = source_config.source_id.clone();
         // This is a bit redundant, as SourceConfig deserialization also checks
         // that the identifier is valid. However it authorizes the special
@@ -454,7 +458,13 @@ impl IndexService {
             .map_err(IndexServiceError::InvalidConfig)?;
         let add_source_request =
             AddSourceRequest::try_from_source_config(index_uid.clone(), &source_config)?;
+        tracing::debug!(
+            "index_service: add_source calling metastore.add_source"
+        );
         self.metastore.add_source(add_source_request).await?;
+        tracing::debug!(
+            "index_service: add_source metastore.add_source returned"
+        );
         info!(
             "source `{}` successfully created for index `{}`",
             source_id, index_uid.index_id,
