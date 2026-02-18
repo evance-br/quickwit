@@ -218,6 +218,10 @@ impl Actor for ControlPlane {
     }
 
     async fn initialize(&mut self, ctx: &ActorContext<Self>) -> Result<(), ActorExitStatus> {
+        tracing::debug!(
+            queue_capacity=?self.queue_capacity(),
+            "control_plane actor: initialize [start]"
+        );
         crate::metrics::CONTROL_PLANE_METRICS.restart_total.inc();
         self.model
             .load_from_metastore(&mut self.metastore, ctx.progress())
@@ -237,6 +241,22 @@ impl Actor for ControlPlane {
             .expect("`initialize` should be called only once");
         spawn_watch_indexers_task(weak_mailbox, cluster_change_stream);
         let _ = self.readiness_tx.send(true);
+        tracing::debug!(
+            queue_capacity=?self.queue_capacity(),
+            "control_plane actor: initialize [end]"
+        );
+        Ok(())
+    }
+
+    async fn finalize(
+        &mut self,
+        exit_status: &quickwit_actors::ActorExitStatus,
+        _ctx: &ActorContext<Self>,
+    ) -> anyhow::Result<()> {
+        tracing::debug!(
+            exit_status=?exit_status,
+            "control_plane actor: finalize"
+        );
         Ok(())
     }
 }
