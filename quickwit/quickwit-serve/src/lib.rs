@@ -333,7 +333,7 @@ async fn start_control_plane_if_needed(
         let control_plane_server_opt = Some(control_plane_mailbox.clone());
         let control_plane_client = ControlPlaneServiceClient::tower()
             .stack_layer(CP_GRPC_SERVER_METRICS_LAYER.clone())
-            .stack_layer(LoadShedLayer::new(100))
+            .stack_layer(LoadShedLayer::new(400))
             .build_from_mailbox(control_plane_mailbox);
         Ok((control_plane_server_opt, control_plane_client))
     } else {

@@ -483,6 +483,9 @@ impl Handler<ControlPlanLoop> for ControlPlane {
         _message: ControlPlanLoop,
         ctx: &ActorContext<Self>,
     ) -> Result<(), ActorExitStatus> {
+        tracing::debug!(
+            "control_plane actor: handle control plan loop [start]"
+        );
         if self.disable_control_loop {
             return Ok(());
         }
@@ -495,6 +498,9 @@ impl Handler<ControlPlanLoop> for ControlPlane {
         }
         self.indexing_scheduler.control_running_plan(&self.model);
         ctx.schedule_self_msg(CONTROL_PLAN_LOOP_INTERVAL, ControlPlanLoop);
+        tracing::debug!(
+            "control_plane actor: handle control plan loop [end]"
+        );
         Ok(())
     }
 }
@@ -713,6 +719,9 @@ impl Handler<AddSourceRequest> for ControlPlane {
         let _rebuild_plan_waiter = self.rebuild_plan_debounced(ctx);
 
         let response = EmptyResponse {};
+        tracing::debug!(
+            "control_plane: add_source [end]"
+        );
         Ok(Ok(response))
     }
 }
