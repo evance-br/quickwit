@@ -646,12 +646,22 @@ pub(super) async fn check_connectivity(params: KafkaSourceParams) -> anyhow::Res
     let topic = params.topic.clone();
     let timeout = Timeout::After(Duration::from_secs(5));
     let cluster_metadata = spawn_blocking(move || {
-        consumer
+        tracing::debug!(
+            "kafka_source: check_connectivity [start]"
+        );
+        let result =consumer
             .fetch_metadata(Some(&topic), timeout)
-            .with_context(|| format!("failed to fetch metadata for topic `{topic}`"))
+            .with_context(|| format!("failed to fetch metadata for topic `{topic}`"));
+        tracing::debug!(
+            "kafka_source: check_connectivity [end]"
+        );
+        result
     })
     .await??;
 
+    tracing::debug!(
+        "kafka_source: check_connectivity [cluster_metadata]"
+    );
     if cluster_metadata.topics().is_empty() {
         bail!("topic `{}` does not exist", params.topic);
     }
@@ -661,6 +671,10 @@ pub(super) async fn check_connectivity(params: KafkaSourceParams) -> anyhow::Res
     if topic_metadata.partitions().is_empty() {
         bail!("topic `{}` has no partitions", params.topic);
     }
+
+    tracing::debug!(
+        "kafka_source: check_connectivity [cluster_metadata] ok",
+    );
     Ok(())
 }
 
