@@ -453,9 +453,15 @@ impl IndexService {
         validate_identifier("source", &source_id).map_err(|_| {
             IndexServiceError::InvalidIdentifier(format!("invalid source ID: `{source_id}`"))
         })?;
+        tracing::debug!(
+            "index_service: add_source check_source_connectivity"
+        );
         check_source_connectivity(&self.storage_resolver, &source_config)
             .await
             .map_err(IndexServiceError::InvalidConfig)?;
+        tracing::debug!(
+            "index_service: add_source check_source_connectivity returned"
+        );
         let add_source_request =
             AddSourceRequest::try_from_source_config(index_uid.clone(), &source_config)?;
         tracing::debug!(
