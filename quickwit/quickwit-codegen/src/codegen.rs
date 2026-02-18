@@ -1029,16 +1029,10 @@ fn generate_tower_mailbox(context: &CodegenContext) -> TokenStream {
             fn call(&mut self, message: M) -> Self::Future {
                 let mailbox = self.inner.clone();
                 let fut = async move {
-                    tracing::debug!(
-                        "mailbox: call ask_for_res [start]"
-                    );
                     mailbox
                         .ask_for_res(message)
                         .await
                         .map_err(|error| error.into())
-                    tracing::debug!(
-                        "mailbox: call ask_for_res [end]"
-                    );
                 };
                 Box::pin(fut)
             }
